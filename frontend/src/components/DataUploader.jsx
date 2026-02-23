@@ -98,21 +98,21 @@ export default function DataUploader({ onUploadSuccess }) {
   }
 
   const isFileTab = activeTab === "CSV" || activeTab === "XLSX";
+  const fileAccept = activeTab === "CSV" ? ".csv" : ".xlsx,.xls";
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.heading}>Upload Dataset</h2>
+    <section className="card uploader-card">
+      <h2 className="uploader-heading">Upload Dataset</h2>
 
-      {/* Tab selector */}
-      <div style={styles.tabs}>
+      {/* Segmented tab selector */}
+      <div className="segmented-control" role="tablist" style={{ marginBottom: "var(--space-5)" }}>
         {TABS.map((tab) => (
           <button
             key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
             onClick={() => handleTabChange(tab)}
-            style={{
-              ...styles.tab,
-              ...(activeTab === tab ? styles.activeTab : {}),
-            }}
+            className={`segmented-tab${activeTab === tab ? " segmented-tab--active" : ""}`}
             type="button"
           >
             {tab}
@@ -120,142 +120,80 @@ export default function DataUploader({ onUploadSuccess }) {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
         {/* File input or URL input depending on tab */}
         {isFileTab ? (
-          <div style={styles.field}>
-            <label style={styles.label}>
-              {activeTab} file
+          <div className="form-field">
+            <span className="form-label">{activeTab} file</span>
+            <div className="file-drop-zone">
+              <label className="file-drop-label" htmlFor="file-upload">
+                <span className="file-drop-icon">↑</span>
+                <span className="file-drop-text">
+                  {file ? file.name : `Choose a ${activeTab} file`}
+                </span>
+                <span className="file-drop-hint">or drag and drop</span>
+              </label>
               <input
+                id="file-upload"
                 type="file"
-                accept={activeTab === "CSV" ? ".csv" : ".xlsx,.xls"}
+                accept={fileAccept}
                 onChange={handleFileChange}
-                style={styles.fileInput}
+                className="file-input-hidden"
               />
-            </label>
+            </div>
           </div>
         ) : (
-          <div style={styles.field}>
-            <label style={styles.label}>
-              Google Sheet URL
-              <input
-                type="url"
-                value={sheetUrl}
-                onChange={(e) => {
-                  setSheetUrl(e.target.value);
-                  setError(null);
-                  setSuccessMessage(null);
-                }}
-                placeholder="https://docs.google.com/spreadsheets/d/..."
-                style={styles.textInput}
-              />
-            </label>
+          <div className="form-field">
+            <label className="form-label" htmlFor="sheet-url">Google Sheet URL</label>
+            <input
+              id="sheet-url"
+              type="url"
+              value={sheetUrl}
+              onChange={(e) => {
+                setSheetUrl(e.target.value);
+                setError(null);
+                setSuccessMessage(null);
+              }}
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+              className="form-input"
+            />
           </div>
         )}
 
         {/* Dataset name */}
-        <div style={styles.field}>
-          <label style={styles.label}>
-            Dataset name
-            <input
-              type="text"
-              value={datasetName}
-              onChange={(e) => {
-                setDatasetName(e.target.value);
-                setError(null);
-                setSuccessMessage(null);
-              }}
-              placeholder="my-dataset"
-              style={styles.textInput}
-            />
-          </label>
+        <div className="form-field">
+          <label className="form-label" htmlFor="dataset-name">Dataset name</label>
+          <input
+            id="dataset-name"
+            type="text"
+            value={datasetName}
+            onChange={(e) => {
+              setDatasetName(e.target.value);
+              setError(null);
+              setSuccessMessage(null);
+            }}
+            placeholder="my-dataset"
+            className="form-input"
+          />
         </div>
 
-        <button type="submit" disabled={loading} style={styles.submitButton}>
-          {loading ? "Uploading…" : "Upload"}
-        </button>
+        <div>
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? "Uploading…" : "Upload"}
+          </button>
+        </div>
       </form>
 
-      {error && <p style={styles.error}>{error}</p>}
-      {successMessage && <p style={styles.success}>{successMessage}</p>}
-    </div>
+      {error && (
+        <div className="alert alert--error" role="alert" style={{ marginTop: "var(--space-4)" }}>
+          {error}
+        </div>
+      )}
+      {successMessage && (
+        <div className="alert alert--success" role="status" style={{ marginTop: "var(--space-4)" }}>
+          {successMessage}
+        </div>
+      )}
+    </section>
   );
 }
-
-const styles = {
-  container: {
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    padding: "1.25rem",
-    marginBottom: "1.5rem",
-    maxWidth: 520,
-  },
-  heading: {
-    marginTop: 0,
-    marginBottom: "0.75rem",
-    fontSize: "1.1rem",
-  },
-  tabs: {
-    display: "flex",
-    gap: 4,
-    marginBottom: "1rem",
-  },
-  tab: {
-    padding: "0.35rem 0.9rem",
-    border: "1px solid #ccc",
-    borderRadius: 4,
-    cursor: "pointer",
-    background: "#f5f5f5",
-    fontSize: "0.9rem",
-  },
-  activeTab: {
-    background: "#0070f3",
-    color: "#fff",
-    borderColor: "#0070f3",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  label: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    fontSize: "0.875rem",
-    fontWeight: 500,
-  },
-  textInput: {
-    padding: "0.4rem 0.6rem",
-    border: "1px solid #ccc",
-    borderRadius: 4,
-    fontSize: "0.9rem",
-  },
-  fileInput: {
-    fontSize: "0.875rem",
-  },
-  submitButton: {
-    padding: "0.5rem 1.25rem",
-    background: "#0070f3",
-    color: "#fff",
-    border: "none",
-    borderRadius: 4,
-    cursor: "pointer",
-    fontSize: "0.95rem",
-    alignSelf: "flex-start",
-  },
-  error: {
-    color: "#c00",
-    marginTop: "0.5rem",
-    fontSize: "0.875rem",
-  },
-  success: {
-    color: "#1a7f37",
-    marginTop: "0.5rem",
-    fontSize: "0.875rem",
-  },
-};

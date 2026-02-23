@@ -7,8 +7,8 @@ import HomePage from "./pages/HomePage";
  */
 export default function App() {
   return (
-    <div style={{ fontFamily: "sans-serif", padding: "2rem" }}>
+    <main className="app-shell">
       <HomePage />
-    </div>
+    </main>
   );
 }

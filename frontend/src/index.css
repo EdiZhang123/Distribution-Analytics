@@ -1,0 +1,458 @@
+/* ============================================================
+   Design tokens — Apple Modern + Academic LaTeX
+   ============================================================ */
+
+:root {
+  /* Colors */
+  --bg: #f7f6f2;
+  --surface: #fff;
+  --surface-secondary: #f2f1ed;
+  --border: #e2e1dc;
+  --text-primary: #1a1917;
+  --text-secondary: #6b6a66;
+  --text-muted: #9e9d99;
+  --accent: #2c5282;
+  --accent-light: #ebf0f8;
+  --accent-hover: #1a3a5c;
+  --error: #b91c1c;
+  --error-bg: #fef2f2;
+  --success: #15803d;
+  --success-bg: #f0fdf4;
+
+  /* Typography */
+  --font-serif: "EB Garamond", Georgia, serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+
+  /* Type scale */
+  --text-xs:   0.75rem;   /* 12px */
+  --text-sm:   0.875rem;  /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg:   1.125rem;  /* 18px */
+  --text-xl:   1.375rem;  /* 22px */
+  --text-2xl:  1.5rem;    /* 24px */
+  --text-3xl:  2.25rem;   /* 36px */
+
+  /* Spacing (8px grid) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-9:  36px;
+  --space-10: 40px;
+
+  /* Radii */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-pill: 9999px;
+
+  /* Shadows (warm-tinted, not pure black) */
+  --shadow-xs:         0 1px 2px rgba(26, 25, 23, 0.07);
+  --shadow-sm:         0 1px 4px rgba(26, 25, 23, 0.10), 0 1px 2px rgba(26, 25, 23, 0.06);
+  --shadow-md:         0 4px 12px rgba(26, 25, 23, 0.12), 0 2px 4px rgba(26, 25, 23, 0.06);
+  --shadow-card-hover: 0 4px 16px rgba(26, 25, 23, 0.14), 0 2px 6px rgba(26, 25, 23, 0.08);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+
+  /* Layout */
+  --max-width: 860px;
+  --page-padding-x: clamp(1rem, 4vw, 2.5rem);
+}
+
+/* ============================================================
+   Base reset
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+
+.app-shell {
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: var(--page-padding-x);
+  padding-block: var(--space-8);
+}
+
+/* ============================================================
+   Card
+   ============================================================ */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ============================================================
+   Button
+   ============================================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px var(--space-5);
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   Form elements
+   ============================================================ */
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 2px rgba(26, 25, 23, 0.05);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  appearance: none;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 1px 2px rgba(26, 25, 23, 0.05), 0 0 0 3px var(--accent-light);
+}
+
+.form-select {
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6a66' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+/* ============================================================
+   Segmented control (pill tabs)
+   ============================================================ */
+
+.segmented-control {
+  display: inline-flex;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 2px;
+}
+
+.segmented-tab {
+  border: none;
+  background: none;
+  border-radius: var(--radius-pill);
+  padding: 5px 16px;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.segmented-tab:hover {
+  color: var(--text-primary);
+}
+
+.segmented-tab--active {
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Alerts
+   ============================================================ */
+
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  border: 1px solid transparent;
+}
+
+.alert--error {
+  background: var(--error-bg);
+  color: var(--error);
+  border-color: #fca5a5;
+}
+
+.alert--success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: #86efac;
+}
+
+/* ============================================================
+   Page header & typography
+   ============================================================ */
+
+.page-header {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-10);
+  padding-bottom: var(--space-6);
+}
+
+.page-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-3xl);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  max-width: 48ch;
+  margin-top: var(--space-2);
+}
+
+.section-heading {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+/* ============================================================
+   Content sections
+   ============================================================ */
+
+.content-section {
+  margin-bottom: var(--space-10);
+}
+
+.detail-section {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-8);
+}
+
+/* ============================================================
+   Dataset card grid
+   ============================================================ */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.dataset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-4);
+  min-height: 80px;
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.dataset-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.dataset-card--selected {
+  border: 2px solid var(--accent);
+  background: var(--accent-light);
+}
+
+.dataset-card--selected:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.dataset-card__name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-bottom: var(--space-1);
+}
+
+.dataset-card__meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   File drop zone
+   ============================================================ */
+
+.file-drop-zone {
+  position: relative;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-secondary);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.file-drop-zone:hover,
+.file-drop-zone:focus-within {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+}
+
+.file-drop-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  cursor: pointer;
+  gap: var(--space-2);
+}
+
+.file-drop-icon {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+}
+
+.file-drop-text {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.file-drop-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Uploader card
+   ============================================================ */
+
+.uploader-card {
+  padding: var(--space-6);
+  max-width: 520px;
+  margin-bottom: var(--space-10);
+}
+
+.uploader-heading {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+/* ============================================================
+   Selector row
+   ============================================================ */
+
+.selector-row {
+  max-width: 320px;
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================================
+   Utility text
+   ============================================================ */
+
+.text-muted {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.text-error {
+  font-size: var(--text-sm);
+  color: var(--error);
+}
