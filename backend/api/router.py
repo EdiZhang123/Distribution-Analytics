@@ -7,7 +7,11 @@ Add new feature routers here as they are implemented.
 
 from fastapi import APIRouter
 
+from backend.api.datasets import router as datasets_router
+
 router = APIRouter()
+
+router.include_router(datasets_router, prefix="/datasets", tags=["datasets"])
 
 
 @router.get("/ping", tags=["meta"])

@@ -1,60 +1,225 @@
-import React from "react";
+import React, { useState } from "react";
 import PlotlyChart from "../charts/PlotlyChart";
-import LatexRenderer from "../components/LatexRenderer";
+import DataUploader from "../components/DataUploader";
+import { useDatasetList, useDatasetDetail } from "../hooks/useDatasets";
 
 /**
- * Home page — scaffold placeholder.
- * Replace with real content once API endpoints and metrics are defined.
+ * Home page.
+ *
+ * Layout:
+ *   1. DataUploader — upload CSV, XLSX, or Google Sheet
+ *   2. Dataset list — clickable cards showing name + row/col counts
+ *   3. When a dataset is selected:
+ *        - Column selector (numeric columns only)
+ *        - Histogram of the selected column via PlotlyChart
  */
 export default function HomePage() {
-  // Example 2D histogram overlay — replace with real data from the API
-  const example2DData = [
-    {
-      x: Array.from({ length: 200 }, () => Math.random() * 4 - 2),
-      type: "histogram",
-      name: "Dataset A",
-      opacity: 0.6,
-    },
-    {
-      x: Array.from({ length: 200 }, () => Math.random() * 4),
-      type: "histogram",
-      name: "Dataset B",
-      opacity: 0.6,
-    },
-  ];
+  const { datasets, loading: listLoading, error: listError, triggerRefresh } =
+    useDatasetList();
 
-  // Example 3D surface — replace with real data from the API
-  const z = Array.from({ length: 20 }, (_, i) =>
-    Array.from({ length: 20 }, (_, j) => Math.sin(i / 3) * Math.cos(j / 3))
-  );
-  const example3DData = [{ type: "surface", z }];
+  const [selectedDatasetName, setSelectedDatasetName] = useState(null);
+  const [selectedColumn, setSelectedColumn] = useState(null);
+
+  const { dataset, loading: detailLoading, error: detailError } =
+    useDatasetDetail(selectedDatasetName);
+
+  function handleSelectDataset(name) {
+    if (name === selectedDatasetName) {
+      // Deselect on second click
+      setSelectedDatasetName(null);
+      setSelectedColumn(null);
+    } else {
+      setSelectedDatasetName(name);
+      setSelectedColumn(null);
+    }
+  }
+
+  function handleColumnChange(event) {
+    setSelectedColumn(event.target.value || null);
+  }
+
+  // Extract numeric values for the histogram from the loaded dataset rows
+  const histogramValues =
+    dataset && selectedColumn
+      ? dataset.rows
+          .map((row) => row[selectedColumn])
+          .filter((v) => v !== null && v !== undefined && !Number.isNaN(Number(v)))
+          .map(Number)
+      : null;
+
+  const histogramData = histogramValues
+    ? [
+        {
+          x: histogramValues,
+          type: "histogram",
+          name: selectedColumn,
+          marker: { color: "#0070f3", opacity: 0.8 },
+        },
+      ]
+    : null;
 
   return (
-    <div>
-      <h1>Distribution Analytics Engine</h1>
-      <p>Distribution-first analytics platform. API and metrics coming soon.</p>
+    <div style={styles.page}>
+      <h1 style={styles.title}>Distribution Analytics Engine</h1>
 
-      <h2>Example: Distribution Overlay (2D)</h2>
-      <PlotlyChart
-        data={example2DData}
-        layout={{ barmode: "overlay", title: "Sample Distribution Overlay" }}
-      />
+      <DataUploader onUploadSuccess={triggerRefresh} />
 
-      <h2>Example: 3D Surface</h2>
-      <PlotlyChart
-        data={example3DData}
-        layout={{ title: "Sample 3D Surface" }}
-      />
+      {/* Dataset list */}
+      <section>
+        <h2 style={styles.sectionHeading}>Datasets</h2>
 
-      <h2>Example: LaTeX Rendering</h2>
-      <p>
-        Wasserstein-1 distance:{" "}
-        <LatexRenderer math="W_1(P, Q) = \inf_{\gamma \in \Pi(P,Q)} \mathbb{E}_{(x,y) \sim \gamma}[\|x - y\|]" />
-      </p>
-      <p>
-        KL divergence:{" "}
-        <LatexRenderer math="D_{KL}(P \| Q) = \sum_x P(x) \log \frac{P(x)}{Q(x)}" />
-      </p>
+        {listLoading && <p style={styles.muted}>Loading datasets…</p>}
+        {listError && <p style={styles.error}>Error: {listError}</p>}
+
+        {!listLoading && datasets.length === 0 && (
+          <p style={styles.muted}>No datasets yet. Upload one above.</p>
+        )}
+
+        <div style={styles.cardGrid}>
+          {datasets.map((ds) => (
+            <button
+              key={ds.name}
+              onClick={() => handleSelectDataset(ds.name)}
+              style={{
+                ...styles.card,
+                ...(selectedDatasetName === ds.name ? styles.cardSelected : {}),
+              }}
+              type="button"
+            >
+              <span style={styles.cardName}>{ds.name}</span>
+              <span style={styles.cardMeta}>
+                {ds.row_count.toLocaleString()} rows × {ds.col_count} cols
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Dataset detail + histogram */}
+      {selectedDatasetName && (
+        <section style={styles.detailSection}>
+          {detailLoading && <p style={styles.muted}>Loading dataset…</p>}
+          {detailError && <p style={styles.error}>Error: {detailError}</p>}
+
+          {dataset && (
+            <>
+              <h2 style={styles.sectionHeading}>{dataset.name}</h2>
+
+              {dataset.numeric_columns.length === 0 ? (
+                <p style={styles.muted}>
+                  No numeric columns found in this dataset.
+                </p>
+              ) : (
+                <>
+                  <div style={styles.selectorRow}>
+                    <label style={styles.selectLabel} htmlFor="column-select">
+                      Column:
+                    </label>
+                    <select
+                      id="column-select"
+                      value={selectedColumn ?? ""}
+                      onChange={handleColumnChange}
+                      style={styles.select}
+                    >
+                      <option value="">— select a column —</option>
+                      {dataset.numeric_columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {histogramData && (
+                    <PlotlyChart
+                      data={histogramData}
+                      layout={{
+                        title: `Distribution of "${selectedColumn}"`,
+                        xaxis: { title: selectedColumn },
+                        yaxis: { title: "Count" },
+                        bargap: 0.05,
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </section>
+      )}
     </div>
   );
 }
+
+const styles = {
+  page: {
+    maxWidth: 900,
+    margin: "0 auto",
+    padding: "1.5rem 1rem",
+    fontFamily: "sans-serif",
+  },
+  title: {
+    marginBottom: "1.5rem",
+  },
+  sectionHeading: {
+    marginBottom: "0.75rem",
+    fontSize: "1.15rem",
+  },
+  muted: {
+    color: "#666",
+    fontSize: "0.9rem",
+  },
+  error: {
+    color: "#c00",
+    fontSize: "0.9rem",
+  },
+  cardGrid: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.75rem",
+  },
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    padding: "0.75rem 1rem",
+    border: "1px solid #ddd",
+    borderRadius: 6,
+    background: "#fafafa",
+    cursor: "pointer",
+    textAlign: "left",
+    minWidth: 160,
+  },
+  cardSelected: {
+    border: "2px solid #0070f3",
+    background: "#e8f0fe",
+  },
+  cardName: {
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    marginBottom: 4,
+  },
+  cardMeta: {
+    fontSize: "0.8rem",
+    color: "#555",
+  },
+  detailSection: {
+    marginTop: "1.5rem",
+  },
+  selectorRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    marginBottom: "1rem",
+  },
+  selectLabel: {
+    fontWeight: 500,
+    fontSize: "0.9rem",
+  },
+  select: {
+    padding: "0.35rem 0.6rem",
+    border: "1px solid #ccc",
+    borderRadius: 4,
+    fontSize: "0.9rem",
+  },
+};
