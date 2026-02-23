@@ -2,19 +2,19 @@
 
 A data analysis platform focused on **comparing, monitoring, and explaining differences between data distributions**, rather than relying solely on point estimates or summary statistics.
 
-This project is designed for high-dimensional, real-world data where understanding _how_ and _why_ distributions differ is more important than simple averages or regressions.
+This project is designed for high-dimensional, real-world data where understanding how and why distributions differ is more important than simple averages or regressions.
 
 ---
 
 ## Motivation
 
-Most analytics tools answer questions like:
+Most analytics tools only answer simple questions like:
 
 - What is the mean?
 - What is the trend?
 - What is the correlation?
 
-This project instead focuses on:
+We want to dig deeper to understand
 
 - How have two datasets _structurally_ changed?
 - Which features actually drive distributional differences?
@@ -24,7 +24,7 @@ The goal is to provide **distribution-first analytics** that are interpretable, 
 
 ---
 
-## Core Capabilities (Planned)
+## Core Capabilities
 
 ### 1. Distribution Comparison
 
@@ -58,7 +58,7 @@ The goal is to provide **distribution-first analytics** that are interpretable, 
 - Scientific and healthcare datasets
 - Strategy robustness analysis in finance
 
-This tool prioritizes **correctness and interpretability** over black-box automation.
+This tool prioritizes **correctness and interpretability**.
 
 ---
 

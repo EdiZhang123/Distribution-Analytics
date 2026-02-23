@@ -2,8 +2,6 @@
 
 This file defines how AI coding tools should be used in this project.
 
-AI is a **coding assistant**, not an architect or decision-maker.
-
 ---
 
 ## What AI Is Allowed To Do
@@ -82,17 +80,3 @@ All AI-generated code must be:
 - Read
 - Understood
 - Tested
-
-If you cannot explain the code to another human, it does not belong in the project.
-
----
-
-## Goal of Using AI
-
-The goal is not speed.
-
-The goal is:
-
-- Higher-quality abstractions
-- Faster iteration on non-core work
-- More time spent on modeling and reasoning
