@@ -17,6 +17,10 @@ class StoredDataset:
     `rows` contains the raw data as a list of dicts (one per row).
     `numeric_columns` is the subset of `columns` whose values are all numeric —
     determined at parse time by the caller, not inferred here.
+
+    `raw_bytes` and `original_filename` are stored for file uploads so the
+    dataset can be re-parsed with different settings via the settings endpoint.
+    Google Sheet datasets leave these as None.
     """
 
     name: str
@@ -25,6 +29,10 @@ class StoredDataset:
     rows: list[dict]
     row_count: int
     col_count: int
+    has_header: bool = True
+    interpretation: str = "tabular"
+    raw_bytes: bytes | None = None
+    original_filename: str | None = None
 
 
 class DatasetStore:

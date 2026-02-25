@@ -37,6 +37,9 @@ class DatasetSummaryResponse(BaseModel):
     numeric_columns: list[str]
     row_count: int
     col_count: int
+    has_header: bool
+    interpretation: str
+    is_file_upload: bool  # True when raw bytes are stored and re-parsing is possible
 
 
 class DatasetDetailResponse(DatasetSummaryResponse):
@@ -79,7 +82,48 @@ def _stored_to_summary(ds: StoredDataset) -> DatasetSummaryResponse:
         numeric_columns=ds.numeric_columns,
         row_count=ds.row_count,
         col_count=ds.col_count,
+        has_header=ds.has_header,
+        interpretation=ds.interpretation,
+        is_file_upload=ds.raw_bytes is not None,
     )
+
+
+def _apply_parse_options(df: pd.DataFrame, has_header: bool, interpretation: str) -> pd.DataFrame:
+    """
+    Rename columns when has_header is False.
+
+    Mutates and returns the DataFrame.  When has_header is True the
+    column names already come from the file's first row so nothing changes.
+    """
+    if not has_header:
+        n = len(df.columns)
+        if interpretation == "point_cloud":
+            if n == 1:
+                df.columns = ["x"]
+            elif n == 2:
+                df.columns = ["x", "y"]
+            elif n == 3:
+                df.columns = ["x", "y", "z"]
+            else:
+                df.columns = [f"dim_{i}" for i in range(n)]
+        else:  # tabular
+            df.columns = [f"col_{i}" for i in range(n)]
+    return df
+
+
+def _read_file(content: bytes, filename: str, has_header: bool) -> pd.DataFrame:
+    """
+    Parse raw file bytes into a DataFrame.
+
+    Raises ValueError for unsupported file types; the caller wraps this in
+    an HTTPException with the appropriate status code.
+    """
+    read_kwargs: dict = {} if has_header else {"header": None}
+    if filename.endswith(".csv"):
+        return pd.read_csv(io.BytesIO(content), **read_kwargs)
+    if filename.endswith(".xlsx") or filename.endswith(".xls"):
+        return pd.read_excel(io.BytesIO(content), engine="openpyxl", **read_kwargs)
+    raise ValueError(f"Unsupported file type: '{filename}'")
 
 
 # ---------------------------------------------------------------------------
@@ -91,44 +135,52 @@ def _stored_to_summary(ds: StoredDataset) -> DatasetSummaryResponse:
 async def upload_dataset(
     file: UploadFile = File(...),
     dataset_name: str = Form(...),
+    has_header: bool = Form(True),
+    interpretation: str = Form("tabular"),  # "tabular" | "point_cloud"
 ) -> DatasetSummaryResponse:
     """
     Parse an uploaded CSV or XLSX file and store it.
 
     The dataset_name is used as the store key; uploading with an existing
     name overwrites the previous dataset.
+
+    has_header controls whether row 0 is treated as column names.
+    interpretation ("tabular" or "point_cloud") determines how columns are
+    named when has_header is False.
     """
     content = await file.read()
     filename = file.filename or ""
     content_type = file.content_type or ""
 
-    is_csv = filename.endswith(".csv") or "csv" in content_type
-    is_xlsx = filename.endswith(".xlsx") or filename.endswith(".xls") or (
-        "spreadsheet" in content_type or "excel" in content_type
-    )
+    # Normalise filename for extension detection when the name is missing
+    if not filename:
+        if "csv" in content_type:
+            filename = "upload.csv"
+        elif "spreadsheet" in content_type or "excel" in content_type:
+            filename = "upload.xlsx"
 
     try:
-        if is_csv:
-            df = pd.read_csv(io.BytesIO(content))
-        elif is_xlsx:
-            df = pd.read_excel(io.BytesIO(content), engine="openpyxl")
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Unsupported file type '{filename}'. "
-                    "Only .csv and .xlsx files are accepted."
-                ),
-            )
-    except HTTPException:
-        raise
+        df = _read_file(content, filename, has_header)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Unsupported file type '{filename}'. "
+                "Only .csv and .xlsx files are accepted."
+            ),
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=400,
             detail=f"Could not parse file: {exc}",
         ) from exc
 
+    df = _apply_parse_options(df, has_header, interpretation)
     stored = _dataframe_to_stored(dataset_name, df)
+    stored.has_header = has_header
+    stored.interpretation = interpretation
+    stored.raw_bytes = content
+    stored.original_filename = filename
     dataset_store.save(stored)
     return _stored_to_summary(stored)
 
@@ -197,6 +249,63 @@ async def ingest_google_sheet(body: GoogleSheetRequest) -> DatasetSummaryRespons
     return _stored_to_summary(stored)
 
 
+class UpdateSettingsRequest(BaseModel):
+    has_header: bool
+    interpretation: str  # "tabular" | "point_cloud"
+
+
+@router.patch("/{dataset_name}/settings", response_model=DatasetSummaryResponse)
+def update_dataset_settings(
+    dataset_name: str,
+    body: UpdateSettingsRequest,
+) -> DatasetSummaryResponse:
+    """
+    Re-parse an uploaded dataset with new has_header / interpretation settings.
+
+    Only works for datasets ingested via file upload (raw bytes were stored).
+    Google Sheet datasets return 400.
+    """
+    ds = dataset_store.get(dataset_name)
+    if ds is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dataset '{dataset_name}' not found.",
+        )
+    if ds.raw_bytes is None or ds.original_filename is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Re-parsing is only available for file uploads, not Google Sheet datasets.",
+        )
+
+    try:
+        df = _read_file(ds.raw_bytes, ds.original_filename, body.has_header)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not re-parse file: {exc}",
+        ) from exc
+
+    df = _apply_parse_options(df, body.has_header, body.interpretation)
+    updated = _dataframe_to_stored(dataset_name, df)
+    updated.has_header = body.has_header
+    updated.interpretation = body.interpretation
+    updated.raw_bytes = ds.raw_bytes
+    updated.original_filename = ds.original_filename
+    dataset_store.save(updated)
+    return _stored_to_summary(updated)
+
+
+@router.delete("/{dataset_name}", status_code=204)
+def delete_dataset(dataset_name: str) -> None:
+    """Delete a dataset by name. Returns 204 No Content on success."""
+    found = dataset_store.delete(dataset_name)
+    if not found:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dataset '{dataset_name}' not found.",
+        )
+
+
 @router.get("/", response_model=list[DatasetSummaryResponse])
 def list_datasets() -> list[DatasetSummaryResponse]:
     """Return summary metadata for all stored datasets."""
@@ -218,5 +327,8 @@ def get_dataset(dataset_name: str) -> DatasetDetailResponse:
         numeric_columns=ds.numeric_columns,
         row_count=ds.row_count,
         col_count=ds.col_count,
+        has_header=ds.has_header,
+        interpretation=ds.interpretation,
+        is_file_upload=ds.raw_bytes is not None,
         rows=ds.rows,
     )

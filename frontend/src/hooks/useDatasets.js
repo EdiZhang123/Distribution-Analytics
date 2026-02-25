@@ -2,6 +2,67 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
 /**
+ * Fetches full dataset details for multiple names in parallel.
+ *
+ * Each name is fetched via its own AbortController so all in-flight requests
+ * are cancelled when the selected names change or the component unmounts.
+ * The effect re-fires only when the sorted set of names changes (namesKey),
+ * not on every render, even though `names` is a new array reference each time.
+ *
+ * @param {string[]} names - Dataset names to fetch in parallel
+ * @returns {Map<string, { dataset: Object|null, loading: boolean, error: string|null }>}
+ */
+export function useMultipleDatasetsDetail(names) {
+  const [datasetMap, setDatasetMap] = useState(() => new Map());
+
+  // Stable key so the effect doesn't re-run when the array reference changes
+  // but the contents haven't changed.
+  const namesKey = [...names].sort().join(",");
+
+  useEffect(() => {
+    if (names.length === 0) {
+      setDatasetMap(new Map());
+      return;
+    }
+
+    // Reset all entries to loading before firing requests
+    setDatasetMap(
+      new Map(names.map((name) => [name, { dataset: null, loading: true, error: null }]))
+    );
+
+    const controllers = names.map(() => new AbortController());
+
+    names.forEach((name, i) => {
+      axios
+        .get(`/api/datasets/${encodeURIComponent(name)}`, {
+          signal: controllers[i].signal,
+        })
+        .then((response) => {
+          setDatasetMap((prev) =>
+            new Map(prev).set(name, { dataset: response.data, loading: false, error: null })
+          );
+        })
+        .catch((err) => {
+          if (axios.isCancel(err)) return;
+          const message =
+            err.response?.data?.detail ?? err.message ?? "Unknown error";
+          setDatasetMap((prev) =>
+            new Map(prev).set(name, { dataset: null, loading: false, error: message })
+          );
+        });
+    });
+
+    return () => {
+      controllers.forEach((c) => c.abort());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [namesKey]);
+
+  return datasetMap;
+}
+
+
+/**
  * Fetches the list of all stored datasets from GET /api/datasets.
  *
  * Re-fires automatically when `refresh` is incremented. Call

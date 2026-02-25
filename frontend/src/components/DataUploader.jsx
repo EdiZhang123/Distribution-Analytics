@@ -22,6 +22,8 @@ export default function DataUploader({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
   const [sheetUrl, setSheetUrl] = useState("");
   const [datasetName, setDatasetName] = useState("");
+  const [hasHeader, setHasHeader] = useState(true);
+  const [interpretation, setInterpretation] = useState("tabular");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -43,6 +45,8 @@ export default function DataUploader({ onUploadSuccess }) {
     setFile(null);
     setSheetUrl("");
     setDatasetName("");
+    setHasHeader(true);
+    setInterpretation("tabular");
     setError(null);
     setSuccessMessage(null);
   }
@@ -78,6 +82,8 @@ export default function DataUploader({ onUploadSuccess }) {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("dataset_name", datasetName.trim());
+        formData.append("has_header", hasHeader);
+        formData.append("interpretation", interpretation);
         await axios.post("/api/datasets/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -87,6 +93,8 @@ export default function DataUploader({ onUploadSuccess }) {
       setFile(null);
       setSheetUrl("");
       setDatasetName("");
+      setHasHeader(true);
+      setInterpretation("tabular");
       onUploadSuccess();
     } catch (err) {
       const message =
@@ -176,6 +184,55 @@ export default function DataUploader({ onUploadSuccess }) {
             className="form-input"
           />
         </div>
+
+        {/* Parse options — file uploads only */}
+        {isFileTab && (
+          <div className="form-field">
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <input
+                id="has-header"
+                type="checkbox"
+                checked={hasHeader}
+                onChange={(e) => setHasHeader(e.target.checked)}
+              />
+              <label htmlFor="has-header" className="form-label" style={{ marginBottom: 0 }}>
+                File has a header row
+              </label>
+            </div>
+
+            <div style={{ marginTop: "var(--space-3)" }}>
+              <span className="form-label">Data format</span>
+              <div style={{ display: "flex", gap: "var(--space-5)", marginTop: "var(--space-1)" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="interpretation"
+                    value="tabular"
+                    checked={interpretation === "tabular"}
+                    onChange={() => setInterpretation("tabular")}
+                  />
+                  Tabular
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="interpretation"
+                    value="point_cloud"
+                    checked={interpretation === "point_cloud"}
+                    onChange={() => setInterpretation("point_cloud")}
+                  />
+                  Point cloud
+                </label>
+              </div>
+            </div>
+
+            {!hasHeader && interpretation === "point_cloud" && (
+              <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", fontStyle: "italic", marginTop: "var(--space-2)", marginBottom: 0 }}>
+                Columns named automatically: 2 cols → x, y &nbsp;|&nbsp; 3 cols → x, y, z &nbsp;|&nbsp; more → dim_0, dim_1, …
+              </p>
+            )}
+          </div>
+        )}
 
         <div>
           <button type="submit" disabled={loading} className="btn-primary">
