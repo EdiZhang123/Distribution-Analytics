@@ -30,6 +30,7 @@ export default function HomePage() {
   const [selectedDatasetNames, setSelectedDatasetNames] = useState(new Set());
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [hoverState, setHoverState] = useState({ visible: false, x: 0, y: 0, point: null });
+  const [normalizeData, setNormalizeData] = useState(false);
 
   // Delete confirmation modal state
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -121,6 +122,15 @@ export default function HomePage() {
   const noSharedColumns = loadedDatasets.length > 1 && sharedNumericColumns.length === 0;
   const maxColumns = isMultiDataset ? 1 : 3;
 
+  function standardize(values) {
+    if (values.length === 0) return values;
+    const mean = values.reduce((s, v) => s + v, 0) / values.length;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    const standardDeviation = Math.sqrt(variance);
+    if (standardDeviation === 0) return values.map(() => 0);
+    return values.map((v) => (v - mean) / standardDeviation);
+  }
+
   // ---- Build chart traces and layout ----
   let chartData = null;
   let chartLayout = null;
@@ -130,10 +140,11 @@ export default function HomePage() {
     if (loadedDatasets.length === 1) {
       // Single histogram
       const ds = loadedDatasets[0];
-      const values = ds.rows
+      const rawValues = ds.rows
         .map((row) => row[col])
         .filter((v) => v !== null && v !== undefined && !Number.isNaN(Number(v)))
         .map(Number);
+      const values = normalizeData ? standardize(rawValues) : rawValues;
       chartData = [
         {
           x: values,
@@ -143,8 +154,8 @@ export default function HomePage() {
         },
       ];
       chartLayout = {
-        title: `Distribution of "${col}"`,
-        xaxis: { title: col },
+        title: `Distribution of "${col}"${normalizeData ? " (standardized)" : ""}`,
+        xaxis: { title: normalizeData ? `${col} (z-score)` : col },
         yaxis: { title: "Count" },
         bargap: 0.05,
         paper_bgcolor: "#f7f6f2",
@@ -153,10 +164,11 @@ export default function HomePage() {
     } else {
       // Overlaid histograms for comparison
       chartData = loadedDatasets.map((ds, i) => {
-        const values = ds.rows
+        const rawValues = ds.rows
           .map((row) => row[col])
           .filter((v) => v !== null && v !== undefined && !Number.isNaN(Number(v)))
           .map(Number);
+        const values = normalizeData ? standardize(rawValues) : rawValues;
         return {
           x: values,
           type: "histogram",
@@ -168,8 +180,8 @@ export default function HomePage() {
         };
       });
       chartLayout = {
-        title: `Comparison of "${col}"`,
-        xaxis: { title: col },
+        title: `Comparison of "${col}"${normalizeData ? " (standardized)" : ""}`,
+        xaxis: { title: normalizeData ? `${col} (z-score)` : col },
         yaxis: { title: "Count" },
         bargap: 0.05,
         barmode: "overlay",
@@ -228,7 +240,7 @@ export default function HomePage() {
         type: "scatter3d",
         mode: "markers",
         name: ds.name,
-        marker: { color: COMPARISON_COLORS[0], size: 4, opacity: 0.75 },
+        marker: { color: COMPARISON_COLORS[0], size: 2, opacity: 0.75 },
       },
     ];
     chartLayout = {
@@ -355,6 +367,17 @@ export default function HomePage() {
                     onChange={setSelectedColumns}
                     maxColumns={maxColumns}
                   />
+
+                  {selectedColumns.length === 1 && loadedDatasets.length >= 1 && (
+                    <label className="normalize-toggle">
+                      <input
+                        type="checkbox"
+                        checked={normalizeData}
+                        onChange={(e) => setNormalizeData(e.target.checked)}
+                      />
+                      Normalize (subtract mean, divide by std)
+                    </label>
+                  )}
 
                   {chartData && (
                     <PlotlyChart

@@ -744,3 +744,22 @@ body {
   line-height: 1;
   flex-shrink: 0;
 }
+
+/* Normalize toggle */
+.normalize-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.normalize-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
