@@ -14,13 +14,13 @@ Most analytics tools only answer simple questions like:
 - What is the trend?
 - What is the correlation?
 
-We want to dig deeper to understand
+We want to provide better tools of visualizing data
 
-- How have two datasets _structurally_ changed?
+- How have two datasets structurally changed?
 - Which features actually drive distributional differences?
 - Is a dataset drifting over time in a meaningful way?
 
-The goal is to provide **distribution-first analytics** that are interpretable, extensible, and mathematically grounded.
+The goal is to provide analytics that are interpretable, extensible, and mathematically grounded.
 
 ---
 
