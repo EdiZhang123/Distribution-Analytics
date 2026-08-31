@@ -1,18 +1,10 @@
 # Distribution-Aware Analytics Engine
 
-A data analysis platform focused on **comparing, monitoring, and explaining differences between data distributions**, rather than relying solely on point estimates or summary statistics.
-
-This project is designed for high-dimensional, real-world data where understanding how and why distributions differ is more important than simple averages or regressions.
+Using this for Bone Shape Modeling data visualization and comparison
 
 ---
 
 ## Motivation
-
-Most analytics tools only answer simple questions like:
-
-- What is the mean?
-- What is the trend?
-- What is the correlation?
 
 We want to provide better tools of visualizing data
 
